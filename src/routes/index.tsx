@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
+import { CheckCircle2, BellRing, Copy, AlertTriangle } from "lucide-react";
 import {
   Phone, MessageCircle, Clock, BadgeCheck, Sparkles, MapPin, Truck, Droplets,
   Home, Trees, Factory, CalendarClock, FileText, Waves, ChevronDown, Calculator, Send,
@@ -12,9 +13,9 @@ const WA = "https://wa.me/375291953535";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Откачка канализации в Минске — Петкевич, ассенизатор" },
+      { title: "chistosliv.by — откачка канализации в Минске, ассенизатор" },
       { name: "description", content: "Откачка выгребных ям, септиков и станций в Минске и Минском районе. Выезд в день звонка, цена заранее, шланг до 40 м." },
-      { property: "og:title", content: "Откачка канализации в Минске — Петкевич" },
+      { property: "og:title", content: "chistosliv.by — откачка канализации в Минске" },
       { property: "og:description", content: "Ямы, септики, станции, ЖБО. Срочный выезд, цена до выезда, документы для юрлиц." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -70,6 +71,7 @@ function Index() {
       <FillCalculator />
       <Prices />
       <Steps />
+      <Prepare />
       <Faq />
       <RequestForm />
       <Footer />
@@ -84,7 +86,7 @@ function Header() {
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-5 py-3">
         <a href="#" className="flex items-center gap-2">
           <span className="grid h-9 w-9 place-items-center rounded-lg bg-deep text-accent"><Truck className="h-5 w-5" /></span>
-          <span className="font-display text-lg font-bold">Петкевич</span>
+          <span className="font-display text-base font-bold uppercase leading-tight">chistosliv.by <span className="text-water">· ассенизатор</span></span>
         </a>
         <nav className="hidden gap-6 text-sm font-semibold text-muted-foreground md:flex">
           <a href="#services" className="hover:text-foreground">Услуги</a>
@@ -253,8 +255,71 @@ function FillCalculator() {
             <div className="font-display text-5xl font-bold text-accent">{label}</div>
             <p className="mt-3 text-sm text-deep-foreground/60">Точный график подскажу после первого выезда.</p>
           </div>
-          <a href="#request" className="mt-6 rounded-full bg-accent px-5 py-3 text-center font-bold text-accent-foreground">Заказать откачку</a>
+          <div className="mt-6 grid gap-2">
+            <a href="#request" className="rounded-full bg-accent px-5 py-3 text-center font-bold text-accent-foreground">Заказать откачку</a>
+            <button onClick={() => downloadReminder(days)} className="flex items-center justify-center gap-2 rounded-full border border-deep-foreground/30 px-5 py-3 font-bold transition hover:bg-deep-foreground/10">
+              <BellRing className="h-4 w-4" />Напоминание в календарь
+            </button>
+          </div>
         </div>
+      </div>
+    </section>
+  );
+}
+
+function downloadReminder(days: number) {
+  const d = new Date(Date.now() + days * 86400000);
+  const ymd = d.toISOString().slice(0, 10).replace(/-/g, "");
+  const ics = [
+    "BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//chistosliv.by//RU", "BEGIN:VEVENT",
+    `UID:${Date.now()}@chistosliv.by`, `DTSTART;VALUE=DATE:${ymd}`,
+    "SUMMARY:Пора откачать яму — chistosliv.by",
+    `DESCRIPTION:Позвоните ассенизатору: ${PHONE_LABEL}`,
+    "BEGIN:VALARM", "TRIGGER:-P2D", "ACTION:DISPLAY", "DESCRIPTION:Скоро откачка ямы", "END:VALARM",
+    "END:VEVENT", "END:VCALENDAR",
+  ].join("\r\n");
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([ics], { type: "text/calendar" }));
+  a.download = "otkachka-napominanie.ics";
+  a.click();
+}
+
+const signs = ["Неприятный запах во дворе или в доме", "Вода в раковине и унитазе уходит медленно", "Уровень в яме выше 2/3", "Бульканье в трубах", "Мокрая земля вокруг ямы"];
+const prep = ["Освободите подъезд для машины (ширина от 3 м)", "Откройте люк или покажите, где он", "Уберите машины и ворота с пути шланга", "Привяжите собак 🙂", "Скажите, если яма не откачивалась больше года"];
+
+function Prepare() {
+  const [checked, setChecked] = useState<string[]>([]);
+  const toggle = (x: string) => setChecked((c) => (c.includes(x) ? c.filter((y) => y !== x) : [...c, x]));
+  const level = checked.length;
+  return (
+    <section className="mx-auto grid max-w-6xl gap-6 px-5 pb-20 md:grid-cols-2">
+      <div className="rounded-3xl border border-border bg-card p-6 shadow-card md:p-8">
+        <AlertTriangle className="h-6 w-6 text-sludge" />
+        <h3 className="mt-3 text-xl font-bold">Тест: пора ли вызывать?</h3>
+        <p className="mt-1 text-sm text-muted-foreground">Отметьте, что замечаете:</p>
+        <ul className="mt-4 space-y-2">
+          {signs.map((x) => (
+            <li key={x}>
+              <label className="flex cursor-pointer items-center gap-3 rounded-xl bg-muted px-4 py-3 text-sm font-semibold">
+                <input type="checkbox" checked={checked.includes(x)} onChange={() => toggle(x)} className="h-5 w-5 accent-primary" />{x}
+              </label>
+            </li>
+          ))}
+        </ul>
+        <div className={`mt-4 rounded-xl px-4 py-3 text-sm font-bold ${level >= 2 ? "bg-accent text-accent-foreground" : "bg-secondary text-secondary-foreground"}`}>
+          {level === 0 ? "Пока всё в порядке — но проверяйте уровень раз в месяц." : level === 1 ? "Стоит запланировать откачку в ближайшие дни." : "Пора вызывать — позвоните сегодня, чтобы не было перелива."}
+        </div>
+        {level >= 2 && <a href={`tel:${PHONE}`} className="mt-3 inline-flex items-center gap-2 font-bold text-primary"><Phone className="h-4 w-4" />{PHONE_LABEL}</a>}
+      </div>
+      <div className="rounded-3xl bg-deep p-6 text-deep-foreground md:p-8">
+        <CheckCircle2 className="h-6 w-6 text-accent" />
+        <h3 className="mt-3 text-xl font-bold">Как подготовиться к приезду</h3>
+        <p className="mt-1 text-sm text-deep-foreground/60">Пять минут — и откачка пройдёт быстрее.</p>
+        <ul className="mt-4 space-y-3">
+          {prep.map((x, i) => (
+            <li key={x} className="flex gap-3"><span className="font-display font-bold text-accent">{i + 1}</span><span>{x}</span></li>
+          ))}
+        </ul>
       </div>
     </section>
   );
@@ -344,7 +409,13 @@ function RequestForm() {
   const [address, setAddress] = useState("");
   const [kind, setKind] = useState("Выгребная яма");
   const [urgent, setUrgent] = useState(true);
-  const text = `Здравствуйте! Заявка на откачку.\nИмя: ${name}\nТелефон: ${phone}\nАдрес: ${address}\nЧто: ${kind}\n${urgent ? "Срочно, сегодня" : "Можно в ближайшие дни"}`;
+  const [date, setDate] = useState("");
+  const [time, setTime] = useState("Любое");
+  const [volume, setVolume] = useState("");
+  const [distance, setDistance] = useState("");
+  const [copied, setCopied] = useState(false);
+  const when = urgent ? "Срочно, сегодня" : `Дата: ${date || "любая"}, время: ${time}`;
+  const text = `Здравствуйте! Заявка на откачку.\nИмя: ${name}\nТелефон: ${phone}\nАдрес: ${address}\nЧто: ${kind}${volume ? `\nОбъём: ~${volume} м³` : ""}${distance ? `\nОт машины до ямы: ~${distance} м` : ""}\n${when}`;
   const ok = phone.trim().length >= 7 && address.trim().length > 2;
 
   return (
@@ -356,6 +427,10 @@ function RequestForm() {
           <div className="mt-8 flex flex-wrap gap-3">
             <a href={`tel:${PHONE}`} className="flex items-center gap-2 rounded-full bg-accent px-6 py-3.5 font-bold text-accent-foreground"><Phone className="h-5 w-5" />{PHONE_LABEL}</a>
             <a href={WA} target="_blank" rel="noreferrer" className="flex items-center gap-2 rounded-full border border-deep-foreground/30 px-6 py-3.5 font-bold"><MessageCircle className="h-5 w-5" />WhatsApp</a>
+            <a href={`viber://chat?number=%2B${PHONE.slice(1)}`} className="flex items-center gap-2 rounded-full border border-deep-foreground/30 px-6 py-3.5 font-bold"><MessageCircle className="h-5 w-5" />Viber</a>
+            <button type="button" onClick={() => { void navigator.clipboard.writeText(PHONE_LABEL); setCopied(true); setTimeout(() => setCopied(false), 2000); }} className="flex items-center gap-2 rounded-full px-4 py-3.5 text-sm font-bold text-deep-foreground/70 hover:text-deep-foreground">
+              <Copy className="h-4 w-4" />{copied ? "Скопировано" : "Скопировать номер"}
+            </button>
           </div>
         </div>
         <form
@@ -373,6 +448,21 @@ function RequestForm() {
           <label className="flex items-center gap-3 text-sm font-semibold">
             <input type="checkbox" checked={urgent} onChange={(e) => setUrgent(e.target.checked)} className="h-5 w-5 accent-primary" /> Срочно, сегодня
           </label>
+          {!urgent && (
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="Дата" value={date} onChange={setDate} placeholder="" type="date" />
+              <label className="block text-sm font-semibold">Время
+                <select value={time} onChange={(e) => setTime(e.target.value)} className="mt-1 w-full rounded-xl border border-input bg-background px-4 py-3">
+                  {["Любое", "Утро (8–12)", "День (12–16)", "Вечер (16–20)"].map((o) => <option key={o}>{o}</option>)}
+                </select>
+              </label>
+            </div>
+          )}
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Объём ямы, м³" value={volume} onChange={setVolume} placeholder="если знаете" type="number" />
+            <Field label="От машины до ямы, м" value={distance} onChange={setDistance} placeholder="примерно" type="number" />
+          </div>
+          {distance && Number(distance) > 40 && <p className="text-sm font-semibold text-destructive">Шланг — до 40 м. Позвоните, подскажем, как подъехать ближе.</p>}
           <button disabled={!ok} className="flex w-full items-center justify-center gap-2 rounded-full bg-primary px-6 py-4 font-bold text-primary-foreground transition disabled:opacity-40">
             <Send className="h-5 w-5" />Отправить заявку
           </button>
@@ -394,7 +484,7 @@ function Footer() {
   return (
     <footer className="border-t border-border pb-24 pt-8 md:pb-8">
       <div className="mx-auto flex max-w-6xl flex-wrap justify-between gap-4 px-5 text-sm text-muted-foreground">
-        <span>© {new Date().getFullYear()} Петкевич — откачка канализации, Минск и Минский район</span>
+        <span>© {new Date().getFullYear()} chistosliv.by — откачка канализации, Минск и Минский район</span>
         <a href={`tel:${PHONE}`} className="font-bold text-foreground">{PHONE_LABEL}</a>
       </div>
     </footer>
